@@ -71,7 +71,7 @@ if not raw_df.empty:
                                              close=features_df['Close'],
                                              name='Price')])
         fig.update_layout(xaxis_rangeslider_visible=False, height=400, margin=dict(l=0, r=0, t=30, b=0))
-        col1.plotly_chart(fig, use_container_width=True)
+        col1.plotly_chart(fig, width='stretch')
 
         col2.subheader("AI System Status")
         current_price = latest_data['Close']
@@ -124,7 +124,7 @@ if not raw_df.empty:
         st.subheader("System Logs & Execution History")
         if st.session_state.trade_history:
             history_df = pd.DataFrame(st.session_state.trade_history)
-            st.dataframe(history_df, use_container_width=True)
+            st.dataframe(history_df, width='stretch')
         else:
             st.info("No trades executed this session.")
     else:
