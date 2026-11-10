@@ -12,6 +12,7 @@ from risk_management import evaluate_risk, calculate_position_size
 # --- UI CONFIGURATION ---
 st.set_page_config(page_title="Autonomous Trading AI", page_icon="📈", layout="wide")
 st.title("📈 Autonomous Trading AI Dashboard")
+st.caption("Paper-trading simulation for educational use only. Not financial advice; no real orders are placed.")
 
 # --- INITIALIZE SESSION STATE ---
 if 'trade_history' not in st.session_state:
@@ -21,7 +22,10 @@ if 'portfolio_value' not in st.session_state:
 
 # --- SIDEBAR CONFIG ---
 st.sidebar.header("System Configuration")
-symbol = st.sidebar.text_input("Ticker Symbol", value="SPY").upper()
+symbol = st.sidebar.text_input("Ticker Symbol", value="SPY").strip().upper()
+if not symbol or not all(c.isalnum() or c in ".-^=" for c in symbol) or len(symbol) > 15:
+    st.sidebar.error("Enter a valid ticker symbol, e.g. SPY, AAPL or RELIANCE.NS")
+    st.stop()
 timeframe = st.sidebar.selectbox("Timeframe", ["1d", "1wk", "1mo"], index=0)
 confidence_thresh = st.sidebar.slider("Minimum Confidence", 0.50, 0.99, 0.60)
 atr_thresh = st.sidebar.number_input("Max ATR Risk Threshold", value=10.0)
@@ -30,11 +34,14 @@ atr_thresh = st.sidebar.number_input("Max ATR Risk Threshold", value=10.0)
 @st.cache_resource
 def load_model():
     # Updated to look for the model in the exact same folder
-    model_path = Path("trading_model.pkl")
+    # Resolve next to this file so the app works regardless of the working directory.
+    model_path = Path(__file__).resolve().parent / "trading_model.pkl"
     try:
-        model = joblib.load(model_path)
-        return model
+        return joblib.load(model_path)
     except FileNotFoundError:
+        return None
+    except Exception as exc:  # e.g. incompatible scikit-learn version
+        st.error(f"Model file could not be loaded: {exc}")
         return None
 
 model = load_model()
@@ -97,13 +104,16 @@ if not raw_df.empty:
                 else:
                     st.warning(f"🛡️ **ACTION: {action}**")
                     
-                if st.button("Manual Trade Execution (Simulated)"):
-                    size = calculate_position_size(st.session_state.portfolio_value, 0.02, current_atr)
+                # Only actionable signals can be executed; a HOLD is never recorded as a trade.
+                actionable = action in ("BUY", "SELL")
+                if st.button("Manual Trade Execution (Simulated)", disabled=not actionable):
+                    size = calculate_position_size(st.session_state.portfolio_value, 0.02, current_atr, current_price)
                     st.session_state.trade_history.append({
                         "Symbol": symbol,
                         "Action": action,
-                        "Price": current_price,
-                        "Size": round(size, 2),
+                        "Price": round(float(current_price), 2),
+                        "Shares": round(size, 2),
+                        "Notional ($)": round(size * float(current_price), 2),
                         "Confidence": round(confidence, 2)
                     })
                     st.toast("Trade recorded in session state.")

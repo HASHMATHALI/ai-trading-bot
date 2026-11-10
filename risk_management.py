@@ -29,12 +29,13 @@ def evaluate_risk(signal: int, confidence: float, current_atr: float, atr_thresh
         return "SELL"
 
 
-def calculate_position_size(capital: float, risk_per_trade: float, atr: float) -> float:
+def calculate_position_size(capital: float, risk_per_trade: float, atr: float, price: float) -> float:
     """
-    Calculates dynamic position size based on Average True Range limits.
-    Risk equation: Size = Total Risk Amount / Initial Stop Loss Distance (1.5 * ATR)
+    Calculates the number of shares to trade based on Average True Range limits.
+    Risk equation: Shares = Total Risk Amount / Initial Stop Loss Distance (1.5 * ATR),
+    capped so the position never costs more than 95% of available capital.
     """
-    if atr == 0:
+    if atr <= 0 or price <= 0 or capital <= 0:
         return 0.0
         
     risk_amount = capital * risk_per_trade
@@ -42,8 +43,6 @@ def calculate_position_size(capital: float, risk_per_trade: float, atr: float) -
     
     position_size = risk_amount / stop_distance
     
-    # Capital cap check (can't buy more than capital)
-    if position_size > capital:
-        position_size = capital * 0.95 # Leave 5% margin
-        
-    return position_size
+    # Capital cap check: shares * price may not exceed capital (leave 5% margin)
+    max_affordable = (capital * 0.95) / price
+    return min(position_size, max_affordable)

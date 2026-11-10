@@ -9,66 +9,39 @@ This repository contains a full production-grade autonomous trading system desig
 
 ---
 
-## 🛠️ Folder Structure
+## 🛠️ Repository Layout
 
 ```text
-autonomous_trading_system/
-├── colab_training/
-│   └── Trading_Model_Training.ipynb   # 1. Run this first in Colab
-├── streamlit_app/
-│   ├── app.py                         # 3. Main Streamlit application
-│   ├── requirements.txt               # Streamlit Cloud dependencies
-│   ├── models/                        
-│   │   └── trading_model.pkl          # 2. Place Colab output here
-│   └── modules/
-│       ├── data_pipeline.py           # Feature engineering & Data Fetch
-│       └── risk_management.py         # AI Override constraints
-└── README.md
+├── app.py               # Streamlit dashboard (entry point)
+├── data_pipeline.py     # Market data fetch + feature engineering
+├── risk_management.py   # Rule-based overrides and position sizing
+├── trading_model.pkl    # RandomForest trained with scikit-learn 1.6.1
+├── requirements.txt
+└── tests/               # pytest suite for the risk engine
 ```
+
+> **Disclaimer:** this is a paper-trading simulation for learning purposes. It places no real
+> orders and is not financial advice.
 
 ---
 
-## 🚀 Deployment Guide & Setup (Step-by-Step)
+## 🚀 Run & Deploy
 
-### Phase 1: Train Model on Google Colab
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
 
-1. Open `colab_training/Trading_Model_Training.ipynb` in [Google Colab](https://colab.research.google.com/).
-2. Run all cells. It will pip install required libraries.
-3. Observe the generated Evaluation Matrix and Classification report.
-4. The final cell will generate and automatically download `trading_model.pkl` to your local machine.
+To deploy on [Streamlit Community Cloud](https://share.streamlit.io/): **New app** → pick this
+repository → main file `app.py` → **Deploy**.
 
-### Phase 2: Local Verification
+If you retrain the model, export it as `trading_model.pkl` in the repository root and update the
+`scikit-learn` pin in `requirements.txt` to the version used for training (pickles are not
+portable across scikit-learn versions).
 
-Before deploying to the cloud, verify and structure the app locally.
-
-1. Navigate to the `streamlit_app/` directory:
-   ```bash
-   cd streamlit_app
-   ```
-2. Create a folder named `models/` inside `streamlit_app/` if it doesn't exist, and place `trading_model.pkl` inside it.
-   ```bash
-   mkdir models
-   mv path/to/downloads/trading_model.pkl models/
-   ```
-3. Install dependencies locally (optional but recommended):
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Run locally to test for errors:
-   ```bash
-   streamlit run app.py
-   ```
-
-### Phase 3: Deploy to Streamlit Cloud
-
-1. Create a GitHub repository and push the **entire `streamlit_app/` folder** to the main branch. Ensure `requirements.txt` and `app.py` are at the root level of your repo (or appropriately configured). Make sure `models/trading_model.pkl` is also committed (it should be small, usually <10MB).
-2. Go to [share.streamlit.io](https://share.streamlit.io/).
-3. Click **"New app"**.
-4. Select your newly created GitHub repository.
-5. Set the "Main file path" to `app.py` (if it's in the root) or `streamlit_app/app.py`.
-6. Click **Deploy**.
-
-Streamlit Cloud will automatically install packages from `requirements.txt` and spin up your execution dashboard.
+```bash
+pip install pytest && pytest -q   # run the tests
+```
 
 ---
 
